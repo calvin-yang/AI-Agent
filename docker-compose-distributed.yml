@@ -1,0 +1,158 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - ai_agent_network
+
+  # 负载均衡器
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - web1
+      - web2
+      - web3
+    networks:
+      - ai_agent_network
+
+  # Web服务器实例1
+  web1:
+    build: .
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - SOCKETIO_MESSAGE_QUEUE=redis://redis:6379/1
+      - SOCKETIO_CHANNEL=ai_agent_socketio
+      - INSTANCE_ID=web1
+    depends_on:
+      - redis
+    volumes:
+      - .:/app
+    command: python scripts/start_async.py
+    networks:
+      - ai_agent_network
+
+  # Web服务器实例2
+  web2:
+    build: .
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - SOCKETIO_MESSAGE_QUEUE=redis://redis:6379/1
+      - SOCKETIO_CHANNEL=ai_agent_socketio
+      - INSTANCE_ID=web2
+    depends_on:
+      - redis
+    volumes:
+      - .:/app
+    command: python scripts/start_async.py
+    networks:
+      - ai_agent_network
+
+  # Web服务器实例3
+  web3:
+    build: .
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - SOCKETIO_MESSAGE_QUEUE=redis://redis:6379/1
+      - SOCKETIO_CHANNEL=ai_agent_socketio
+      - INSTANCE_ID=web3
+    depends_on:
+      - redis
+    volumes:
+      - .:/app
+    command: python scripts/start_async.py
+    networks:
+      - ai_agent_network
+
+  # Celery Worker实例1
+  worker1:
+    build: .
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - SOCKETIO_MESSAGE_QUEUE=redis://redis:6379/1
+      - SOCKETIO_CHANNEL=ai_agent_socketio
+      - WORKER_ID=worker1
+    depends_on:
+      - redis
+    volumes:
+      - .:/app
+    command: python celery_worker.py
+    networks:
+      - ai_agent_network
+
+  # Celery Worker实例2
+  worker2:
+    build: .
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - SOCKETIO_MESSAGE_QUEUE=redis://redis:6379/1
+      - SOCKETIO_CHANNEL=ai_agent_socketio
+      - WORKER_ID=worker2
+    depends_on:
+      - redis
+    volumes:
+      - .:/app
+    command: python celery_worker.py
+    networks:
+      - ai_agent_network
+
+  # Celery Worker实例3
+  worker3:
+    build: .
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - SOCKETIO_MESSAGE_QUEUE=redis://redis:6379/1
+      - SOCKETIO_CHANNEL=ai_agent_socketio
+      - WORKER_ID=worker3
+    depends_on:
+      - redis
+    volumes:
+      - .:/app
+    command: python celery_worker.py
+    networks:
+      - ai_agent_network
+
+  # 监控服务
+  flower:
+    build: .
+    ports:
+      - "5555:5555"
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - redis
+    volumes:
+      - .:/app
+    command: celery -A app.celery_app flower --port=5555
+    networks:
+      - ai_agent_network
+
+volumes:
+  redis_data:
+
+networks:
+  ai_agent_network:
+    driver: bridge

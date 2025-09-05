@@ -10,8 +10,28 @@ class SearchService:
     """搜索引擎服务类"""
     
     def __init__(self):
-        self.config = current_app.config['SEARCH_ENGINES']
-        self.user_agent = current_app.config['CRAWLER_CONFIG']['user_agent']
+        # 尝试从Flask应用上下文获取配置，如果没有则使用默认配置
+        try:
+            if current_app:
+                self.config = current_app.config['SEARCH_ENGINES']
+                self.user_agent = current_app.config['CRAWLER_CONFIG']['user_agent']
+            else:
+                raise RuntimeError("No Flask app context")
+        except:
+            # 如果没有Flask应用上下文，使用默认配置
+            self.config = {
+                'duckduckgo': {
+                    'enabled': True,
+                    'weight': 0.6,
+                    'max_results': 5
+                },
+                'google': {
+                    'enabled': True,
+                    'weight': 0.4,
+                    'max_results': 3
+                }
+            }
+            self.user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
     
     def search(self, keywords: str) -> List[Dict]:
         """

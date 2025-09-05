@@ -9,7 +9,20 @@ class CrawlerService:
     """网页爬虫服务类"""
     
     def __init__(self):
-        self.config = current_app.config['CRAWLER_CONFIG']
+        # 尝试从Flask应用上下文获取配置，如果没有则使用默认配置
+        try:
+            if current_app:
+                self.config = current_app.config['CRAWLER_CONFIG']
+            else:
+                raise RuntimeError("No Flask app context")
+        except:
+            # 如果没有Flask应用上下文，使用默认配置
+            self.config = {
+                'timeout': 10,
+                'max_content_length': 50000,
+                'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+        
         self.headers = {
             'User-Agent': self.config['user_agent'],
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',

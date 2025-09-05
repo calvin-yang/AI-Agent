@@ -12,8 +12,13 @@ def main():
     print("🤖 AI Agent - 联网智能助手")
     print("=" * 50)
     
+    # 切换到项目根目录
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    os.chdir(project_root)
+    print(f"✅ 切换到项目根目录: {project_root}")
+    
     # 加载环境变量
-    env_file = os.path.join(os.path.dirname(__file__), '.env')
+    env_file = os.path.join(project_root, '.env')
     if os.path.exists(env_file):
         load_dotenv(env_file)
         print("✅ 已加载环境变量")
@@ -34,9 +39,16 @@ def main():
     
     # 启动Flask应用
     try:
+        import sys
+        import os
+        # 添加项目根目录到Python路径
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        if project_root not in sys.path:
+            sys.path.insert(0, project_root)
+        
         from app import create_app
-        app = create_app()
-        app.run(debug=True, host='0.0.0.0', port=8002)
+        app, socketio = create_app()
+        socketio.run(app, debug=True, host='0.0.0.0', port=8002)
     except KeyboardInterrupt:
         print("\n👋 服务已停止")
     except Exception as e:

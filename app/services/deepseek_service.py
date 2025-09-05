@@ -7,9 +7,21 @@ class DeepSeekService:
     """DeepSeek API服务类"""
     
     def __init__(self):
-        self.api_key = current_app.config['DEEPSEEK_API_KEY']
-        self.base_url = current_app.config['DEEPSEEK_BASE_URL']
-        self.model = current_app.config['DEEPSEEK_MODEL']
+        # 尝试从Flask应用上下文获取配置，如果没有则从环境变量获取
+        try:
+            if current_app:
+                self.api_key = current_app.config['DEEPSEEK_API_KEY']
+                self.base_url = current_app.config['DEEPSEEK_BASE_URL']
+                self.model = current_app.config['DEEPSEEK_MODEL']
+            else:
+                raise RuntimeError("No Flask app context")
+        except:
+            # 如果没有Flask应用上下文，从环境变量获取
+            import os
+            self.api_key = os.environ.get('DEEPSEEK_API_KEY', 'your-deepseek-api-key')
+            self.base_url = os.environ.get('DEEPSEEK_BASE_URL', 'https://api.deepseek.com/v1')
+            self.model = os.environ.get('DEEPSEEK_MODEL', 'deepseek-chat')
+        
         self.headers = {
             'Authorization': f'Bearer {self.api_key}',
             'Content-Type': 'application/json'
@@ -112,10 +124,19 @@ class DeepSeekService:
         """
         url = f"{self.base_url}/chat/completions"
         
+        # 获取温度配置
+        try:
+            if current_app:
+                temperature = current_app.config['AI_ANALYSIS_CONFIG']['temperature']
+            else:
+                raise RuntimeError("No Flask app context")
+        except:
+            temperature = 0.7  # 默认温度
+        
         payload = {
             "model": self.model,
             "messages": messages,
-            "temperature": current_app.config['AI_ANALYSIS_CONFIG']['temperature'],
+            "temperature": temperature,
             "max_tokens": 2000
         }
         

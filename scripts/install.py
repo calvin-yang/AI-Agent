@@ -30,13 +30,18 @@ def main():
     
     print(f"✅ Python版本: {sys.version}")
     
+    # 切换到项目根目录
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    os.chdir(project_root)
+    print(f"✅ 切换到项目根目录: {project_root}")
+    
     # 安装依赖
     if not run_command("pip install -r requirements.txt", "安装Python依赖包"):
         print("❌ 依赖安装失败，请检查网络连接和pip配置")
         sys.exit(1)
     
     # 创建.env文件（如果不存在）
-    env_file = os.path.join(os.path.dirname(__file__), '.env')
+    env_file = os.path.join(project_root, '.env')
     if not os.path.exists(env_file):
         print("📝 创建.env配置文件...")
         with open(env_file, 'w', encoding='utf-8') as f:
@@ -61,7 +66,7 @@ def main():
     print("🎉 安装完成！")
     print("\n📋 下一步操作：")
     print("1. 编辑.env文件，设置您的DeepSeek API密钥")
-    print("2. 运行: python start.py")
+    print("2. 运行: python scripts/start.py")
     print("3. 打开浏览器访问: http://localhost:8002")
     print("\n📚 更多信息请查看README.md文件")
 

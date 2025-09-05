@@ -24,6 +24,11 @@ def main():
     print("🔄 更新AI Agent依赖包")
     print("=" * 50)
     
+    # 切换到项目根目录
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    os.chdir(project_root)
+    print(f"✅ 切换到项目根目录: {project_root}")
+    
     # 卸载旧的duckduckgo_search包
     print("📦 卸载旧的duckduckgo_search包...")
     try:
@@ -49,7 +54,7 @@ def main():
     print("- duckduckgo_search → ddgs")
     print("- 搜索服务已更新为使用新的包")
     print("\n🚀 现在可以正常运行应用了：")
-    print("python start.py")
+    print("python scripts/start.py")
 
 if __name__ == '__main__':
     main()
