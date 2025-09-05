@@ -223,6 +223,70 @@
             background-color: #f6f8fa;
             font-weight: 600;
         }
+        
+        /* 模态框样式修复 - 强制设置 */
+        .modal {
+            z-index: 1055 !important;
+            position: fixed !important;
+        }
+        
+        .modal-backdrop {
+            z-index: 1050 !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+        }
+        
+        .modal-dialog {
+            pointer-events: auto !important;
+            z-index: 1056 !important;
+            position: relative !important;
+        }
+        
+        .modal-content {
+            pointer-events: auto !important;
+            z-index: 1057 !important;
+            position: relative !important;
+        }
+        
+        .modal .btn {
+            pointer-events: auto !important;
+            z-index: 1058 !important;
+            position: relative !important;
+        }
+        
+        /* 确保模态框内容可点击 */
+        .modal.show {
+            display: block !important;
+        }
+        
+        .modal.show .modal-dialog {
+            transform: none !important;
+        }
+        
+        /* 强制覆盖任何可能的冲突样式 */
+        .modal-dialog[style*="z-index"] {
+            z-index: 1056 !important;
+        }
+        
+        .modal-content[style*="z-index"] {
+            z-index: 1057 !important;
+        }
+        
+        /* 钱包连接按钮样式 */
+        .btn-outline-primary:hover,
+        .btn-outline-success:hover {
+            transform: translateY(-2px);
+            transition: all 0.3s ease;
+        }
+        
+        /* 提示消息样式 */
+        .alert {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border: none;
+        }
     </style>
 </head>
 <body>

@@ -59,3 +59,14 @@ class Config:
         'max_context_length': 8000,
         'temperature': 0.7
     }
+    
+    # MongoDB配置
+    MONGODB_HOST = os.environ.get('MONGODB_HOST') or "mongodb://admin:123456@127.0.0.1:27017/ai_agent_db?authSource=admin"
+    
+    # 钱包认证配置
+    WALLET_AUTH_CONFIG = {
+        'jwt_secret': os.environ.get('JWT_SECRET') or 'wallet-auth-secret-key',
+        'jwt_expiration': 86400,  # 24小时
+        'supported_chains': [1, 56, 137, 250],  # Ethereum, BSC, Polygon, Fantom
+        'nonce_expiration': 300  # 5分钟
+    }

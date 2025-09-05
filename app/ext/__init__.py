@@ -1,6 +1,7 @@
 import os
 from flask_redis import FlaskRedis
 from flask_socketio import SocketIO
+from mongoengine import connect, disconnect
 from celery import Celery
 from dotenv import load_dotenv
 
@@ -16,6 +17,10 @@ def init_extensions(app):
     """初始化所有Flask扩展"""
     # 初始化Redis
     redis_store.init_app(app)
+    
+    # 初始化MongoDB
+    mongodb_host = app.config.get('MONGODB_HOST', 'mongodb://admin:123456@127.0.0.1:27017/ai_agent_db?authSource=admin')
+    connect(host=mongodb_host)
     
     # 初始化Celery
     celery.conf.update(

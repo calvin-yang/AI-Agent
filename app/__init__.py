@@ -4,6 +4,7 @@ from flask_cors import CORS
 from app.ext import redis_store, celery, socketio, init_extensions
 from app.blueprints.chat import chat_bp
 from app.blueprints.api import api_bp
+from app.blueprints.auth import auth_bp
 from app.config import Config
 from app.socketio import register_socketio_events
 
@@ -30,6 +31,7 @@ def create_app(is_socketio=False):
     # 注册蓝图
     app.register_blueprint(chat_bp, url_prefix='/')
     app.register_blueprint(api_bp, url_prefix='/api')
+    app.register_blueprint(auth_bp, url_prefix='/api/auth')
     
     # 配置SocketIO事件处理
     register_socketio_events(app)

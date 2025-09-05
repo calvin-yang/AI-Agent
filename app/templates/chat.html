@@ -11,9 +11,25 @@
                 <i class="fas fa-robot text-primary me-2"></i>
                 AI Agent 智能助手
             </h4>
-            <span id="connectionStatus" class="badge bg-warning">
-                <i class="fas fa-circle text-warning me-1"></i>连接中...
-            </span>
+            <div class="d-flex align-items-center gap-2">
+                <span id="connectionStatus" class="badge bg-warning">
+                    <i class="fas fa-circle text-warning me-1"></i>连接中...
+                </span>
+                <div id="walletSection">
+                    <button id="connectWalletBtn" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-wallet me-1"></i>连接钱包
+                    </button>
+                    <div id="walletInfo" class="d-none">
+                        <span class="badge bg-success me-2">
+                            <i class="fas fa-check-circle me-1"></i>
+                            <span id="walletAddress"></span>
+                        </span>
+                        <button id="disconnectWalletBtn" class="btn btn-outline-danger btn-sm">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
         <p class="text-muted text-center mb-0">支持联网搜索的智能问答系统</p>
     </div>
@@ -66,6 +82,72 @@
         </div>
     </div>
 </div>
+
+<!-- 自定义钱包连接模态框 -->
+<div id="walletModal" class="custom-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; background: rgba(0,0,0,0.5);">
+    <div class="custom-modal-dialog" style="position: relative; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 500px; width: 90%; z-index: 10000;">
+        <div class="custom-modal-content" style="background: white; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 10001;">
+            <div class="custom-modal-header" style="padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                <h5 style="margin: 0; font-weight: 600;">
+                    <i class="fas fa-wallet me-2"></i>连接钱包
+                </h5>
+                <button type="button" class="btn-close" id="closeWalletModal" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="custom-modal-body" style="padding: 20px;">
+                <div class="text-center mb-4">
+                    <p class="text-muted">选择您的钱包进行连接</p>
+                </div>
+                <div class="d-grid gap-3">
+                    <button class="btn btn-outline-primary btn-lg" id="connectMetaMask" style="pointer-events: auto; cursor: pointer;">
+                        <i class="fab fa-ethereum me-2"></i>
+                        MetaMask
+                    </button>
+                    <button class="btn btn-outline-success btn-lg" id="connectOKX" style="pointer-events: auto; cursor: pointer;">
+                        <i class="fas fa-wallet me-2"></i>
+                        OKX Wallet
+                    </button>
+                </div>
+                <div class="mt-4">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <small>连接钱包后，您将能够享受个性化的AI服务体验</small>
+                    </div>
+                </div>
+            </div>
+            <div class="custom-modal-footer" style="padding: 20px; border-top: 1px solid #eee; text-align: right;">
+                <button type="button" class="btn btn-secondary" id="cancelWalletModal">取消</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 签名确认模态框 -->
+<div class="modal fade" id="signModal" tabindex="-1" aria-labelledby="signModalLabel" aria-hidden="true" style="z-index: 1055;">
+    <div class="modal-dialog modal-dialog-centered" style="pointer-events: auto; z-index: 1056; position: relative;">
+        <div class="modal-content" style="pointer-events: auto; z-index: 1057; position: relative;">
+            <div class="modal-header">
+                <h5 class="modal-title" id="signModalLabel">
+                    <i class="fas fa-signature me-2"></i>签名确认
+                </h5>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">请在您的钱包中确认签名</p>
+                </div>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <small>此签名仅用于身份验证，不会产生任何交易费用</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelSignBtn" style="pointer-events: auto;">取消</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -77,6 +159,23 @@ document.addEventListener('DOMContentLoaded', function() {
     const sendBtn = document.getElementById('sendBtn');
     const suggestions = document.getElementById('suggestions');
     const suggestionList = document.getElementById('suggestionList');
+    
+    // 钱包相关元素
+    const connectWalletBtn = document.getElementById('connectWalletBtn');
+    const walletInfo = document.getElementById('walletInfo');
+    const walletAddress = document.getElementById('walletAddress');
+    const disconnectWalletBtn = document.getElementById('disconnectWalletBtn');
+    const walletModalElement = document.getElementById('walletModal');
+    const signModalElement = document.getElementById('signModal');
+    const signModal = new bootstrap.Modal(signModalElement);
+    const connectMetaMaskBtn = document.getElementById('connectMetaMask');
+    const connectOKXBtn = document.getElementById('connectOKX');
+    const cancelSignBtn = document.getElementById('cancelSignBtn');
+    
+    // 钱包状态
+    let currentWallet = null;
+    let currentAccount = null;
+    let authToken = localStorage.getItem('authToken');
     
     // 初始化SocketIO连接，只使用WebSocket
     const socket = io({
@@ -374,6 +473,329 @@ document.addEventListener('DOMContentLoaded', function() {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+    
+    // 强制修复模态框点击问题 - 使用更激进的方法
+    function fixModalClick() {
+        console.log('开始修复模态框点击问题');
+        
+        // 方法1: 直接移除backdrop的pointer-events
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        backdrops.forEach(backdrop => {
+            backdrop.style.pointerEvents = 'none';
+            backdrop.style.zIndex = '1050';
+            console.log('移除backdrop pointer-events');
+        });
+        
+        // 方法2: 强制设置模态框层级
+        const modalDialogs = document.querySelectorAll('.modal-dialog');
+        modalDialogs.forEach(dialog => {
+            dialog.style.pointerEvents = 'auto';
+            dialog.style.zIndex = '9999';
+            dialog.style.position = 'relative';
+            console.log('设置modal-dialog z-index: 9999');
+        });
+        
+        // 方法3: 强制设置模态框内容层级
+        const modalContents = document.querySelectorAll('.modal-content');
+        modalContents.forEach(content => {
+            content.style.pointerEvents = 'auto';
+            content.style.zIndex = '10000';
+            content.style.position = 'relative';
+            console.log('设置modal-content z-index: 10000');
+        });
+        
+        // 方法4: 确保所有按钮可点击
+        const buttons = document.querySelectorAll('.modal .btn');
+        buttons.forEach(button => {
+            button.style.pointerEvents = 'auto';
+            button.style.zIndex = '10001';
+            button.style.position = 'relative';
+        });
+        
+        // 方法5: 如果还是不行，直接禁用backdrop
+        setTimeout(() => {
+            const backdrops = document.querySelectorAll('.modal-backdrop');
+            backdrops.forEach(backdrop => {
+                backdrop.style.display = 'none';
+                console.log('完全隐藏backdrop');
+            });
+        }, 100);
+        
+        console.log('模态框修复完成');
+    }
+    
+    // 自定义模态框控制函数
+    function showWalletModal() {
+        walletModalElement.style.display = 'block';
+        document.body.style.overflow = 'hidden'; // 防止背景滚动
+    }
+    
+    function hideWalletModal() {
+        walletModalElement.style.display = 'none';
+        document.body.style.overflow = 'auto'; // 恢复滚动
+    }
+    
+    // 钱包连接事件
+    connectWalletBtn.addEventListener('click', function() {
+        console.log('连接钱包按钮被点击');
+        showWalletModal();
+    });
+    
+    // 关闭模态框事件
+    document.getElementById('closeWalletModal').addEventListener('click', hideWalletModal);
+    document.getElementById('cancelWalletModal').addEventListener('click', hideWalletModal);
+    
+    // 点击背景关闭模态框
+    walletModalElement.addEventListener('click', function(e) {
+        if (e.target === walletModalElement) {
+            hideWalletModal();
+        }
+    });
+    
+    // ESC键关闭模态框
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && walletModalElement.style.display === 'block') {
+            hideWalletModal();
+        }
+    });
+    
+    connectMetaMaskBtn.addEventListener('click', function() {
+        console.log('MetaMask按钮被点击');
+        connectWallet('metamask');
+    });
+    
+    connectOKXBtn.addEventListener('click', function() {
+        console.log('OKX按钮被点击');
+        connectWallet('okx');
+    });
+    
+    disconnectWalletBtn.addEventListener('click', function() {
+        disconnectWallet();
+    });
+    
+    // 取消签名按钮
+    cancelSignBtn.addEventListener('click', function() {
+        signModal.hide();
+    });
+    
+    // 自定义模态框事件监听
+    console.log('自定义钱包模态框已初始化');
+    
+    signModalElement.addEventListener('shown.bs.modal', function() {
+        console.log('签名模态框已显示');
+        fixModalClick();
+    });
+    
+    signModalElement.addEventListener('hidden.bs.modal', function() {
+        console.log('签名模态框已关闭');
+    });
+    
+    // 初始化时检查是否已登录
+    if (authToken) {
+        verifyToken();
+    }
+    
+    // 钱包连接函数
+    async function connectWallet(walletType) {
+        try {
+            // 先关闭钱包选择模态框
+            hideWalletModal();
+            
+            // 检查钱包是否可用
+            if (walletType === 'metamask' && !window.ethereum) {
+                showError('请安装MetaMask钱包');
+                return;
+            }
+            
+            if (walletType === 'okx' && !window.okxwallet) {
+                showError('请安装OKX钱包');
+                return;
+            }
+            
+            // 连接钱包
+            const provider = walletType === 'metamask' ? window.ethereum : window.okxwallet;
+            const accounts = await provider.request({ method: 'eth_requestAccounts' });
+            
+            if (accounts.length === 0) {
+                showError('未获取到钱包账户');
+                return;
+            }
+            
+            currentAccount = accounts[0];
+            currentWallet = walletType;
+            
+            // 获取链ID
+            const chainId = await provider.request({ method: 'eth_chainId' });
+            const chainIdNumber = parseInt(chainId, 16);
+            
+            // 开始认证流程
+            await authenticateWallet(currentAccount, walletType, chainIdNumber);
+            
+        } catch (error) {
+            console.error('连接钱包失败:', error);
+            showError('连接钱包失败: ' + error.message);
+        }
+    }
+    
+    // 钱包认证函数
+    async function authenticateWallet(address, walletType, chainId) {
+        try {
+            // 1. 获取随机数
+            const nonceResponse = await fetch('/api/auth/nonce', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    wallet_address: address
+                })
+            });
+            
+            const nonceData = await nonceResponse.json();
+            if (!nonceData.success) {
+                throw new Error(nonceData.error);
+            }
+            
+            // 2. 显示签名模态框
+            signModal.show();
+            
+            // 3. 请求用户签名
+            const provider = walletType === 'metamask' ? window.ethereum : window.okxwallet;
+            const signature = await provider.request({
+                method: 'personal_sign',
+                params: [nonceData.data.message, address]
+            });
+            
+            // 4. 验证签名
+            const verifyResponse = await fetch('/api/auth/verify', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    wallet_address: address,
+                    signature: signature,
+                    nonce: nonceData.data.nonce,
+                    wallet_type: walletType,
+                    chain_id: chainId
+                })
+            });
+            
+            const verifyData = await verifyResponse.json();
+            if (!verifyData.success) {
+                throw new Error(verifyData.error);
+            }
+            
+            // 5. 保存认证信息
+            authToken = verifyData.data.token;
+            localStorage.setItem('authToken', authToken);
+            
+            // 6. 更新UI
+            signModal.hide();
+            updateWalletUI(address, verifyData.data.user);
+            
+            showSuccess('钱包连接成功！');
+            
+        } catch (error) {
+            console.error('钱包认证失败:', error);
+            signModal.hide();
+            showError('钱包认证失败: ' + error.message);
+        }
+    }
+    
+    // 验证token
+    async function verifyToken() {
+        try {
+            const response = await fetch('/api/auth/profile', {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                currentAccount = data.data.wallet_address;
+                currentWallet = data.data.wallet_type;
+                updateWalletUI(data.data.wallet_address, data.data);
+            } else {
+                // Token无效，清除本地存储
+                localStorage.removeItem('authToken');
+                authToken = null;
+            }
+        } catch (error) {
+            console.error('验证token失败:', error);
+            localStorage.removeItem('authToken');
+            authToken = null;
+        }
+    }
+    
+    // 断开钱包连接
+    function disconnectWallet() {
+        currentWallet = null;
+        currentAccount = null;
+        authToken = null;
+        localStorage.removeItem('authToken');
+        
+        // 更新UI
+        connectWalletBtn.classList.remove('d-none');
+        walletInfo.classList.add('d-none');
+        
+        showSuccess('钱包已断开连接');
+    }
+    
+    // 更新钱包UI
+    function updateWalletUI(address, userData) {
+        const shortAddress = `${address.slice(0, 6)}...${address.slice(-4)}`;
+        walletAddress.textContent = shortAddress;
+        walletAddress.title = address;
+        
+        connectWalletBtn.classList.add('d-none');
+        walletInfo.classList.remove('d-none');
+    }
+    
+    // 显示错误消息
+    function showError(message) {
+        // 创建错误提示元素
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+        errorDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        errorDiv.innerHTML = `
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(errorDiv);
+        
+        // 5秒后自动移除
+        setTimeout(() => {
+            if (errorDiv.parentNode) {
+                errorDiv.remove();
+            }
+        }, 5000);
+    }
+    
+    // 显示成功消息
+    function showSuccess(message) {
+        // 创建成功提示元素
+        const successDiv = document.createElement('div');
+        successDiv.className = 'alert alert-success alert-dismissible fade show position-fixed';
+        successDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        successDiv.innerHTML = `
+            <i class="fas fa-check-circle me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(successDiv);
+        
+        // 3秒后自动移除
+        setTimeout(() => {
+            if (successDiv.parentNode) {
+                successDiv.remove();
+            }
+        }, 3000);
     }
     
     // 聚焦输入框
