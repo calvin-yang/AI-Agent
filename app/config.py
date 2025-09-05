@@ -30,7 +30,7 @@ class Config:
     
     # DeepSeek API配置
     DEEPSEEK_API_KEY = os.environ.get('DEEPSEEK_API_KEY') or 'your-deepseek-api-key'
-    DEEPSEEK_BASE_URL = 'https://api.deepseek.com/v1'
+    DEEPSEEK_BASE_URL = 'https://api.deepseek.com'
     DEEPSEEK_MODEL = 'deepseek-chat'
     
     # 搜索引擎配置

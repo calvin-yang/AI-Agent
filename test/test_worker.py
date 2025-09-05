@@ -39,13 +39,12 @@ def test_worker_startup():
         
         # 测试Celery实例创建
         print("🔄 测试Celery实例创建...")
-        from app.celery_app import make_celery
-        celery = make_celery()
+        from app.ext import celery
         print("✅ Celery实例创建成功")
         
         # 测试任务注册
         print("🔄 测试任务注册...")
-        from app.tasks import process_question_async, get_suggestions_async
+        from app.schedules.chat_tasks import process_question_async, get_suggestions_async
         print("✅ 任务导入成功")
         print(f"   已注册任务: {list(celery.tasks.keys())}")
         

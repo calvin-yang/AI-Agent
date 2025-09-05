@@ -1,13 +1,13 @@
+"""
+聊天相关任务 - 从原tasks.py迁移
+"""
 from app.services.ai_agent_service import AIAgentService
 from flask_socketio import emit
 from flask import current_app
 import traceback
 
-# 导入celery并创建实例
-from app.celery_app import make_celery
-
-# 创建celery实例
-celery = make_celery()
+# 导入celery实例
+from app.ext import celery
 
 @celery.task(bind=True)
 def process_question_async(self, question, session_id):

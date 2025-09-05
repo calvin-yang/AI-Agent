@@ -29,12 +29,22 @@ def main():
     
     try:
         # 启动Celery Worker
-        from app.celery_app import make_celery
+        from app.ext import celery
         
-        # 创建Celery实例（使用默认配置）
-        celery = make_celery()
+        # 确保Celery配置已加载
+        celery.config_from_object('app.celeryconfig')
+        
+        # 显示已注册的任务
+        registered_tasks = list(celery.tasks.keys())
+        schedule_tasks = [task for task in registered_tasks if 'schedules' in task]
         
         print("🚀 Celery Worker已启动")
+        print(f"   已注册任务数量: {len(registered_tasks)}")
+        print(f"   Schedules任务: {len(schedule_tasks)}")
+        if schedule_tasks:
+            print("   任务列表:")
+            for task in schedule_tasks:
+                print(f"     - {task}")
         print("   等待任务...")
         print("   按 Ctrl+C 停止")
         print("=" * 50)

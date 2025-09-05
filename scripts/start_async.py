@@ -50,7 +50,7 @@ def start_celery_worker():
     """启动Celery Worker"""
     print("🔄 启动Celery Worker...")
     try:
-        cmd = [sys.executable, '-m', 'celery', '-A', 'app.celery_app', 'worker', '--loglevel=info']
+        cmd = [sys.executable, '-m', 'celery', '-A', 'app.ext', 'worker', '--loglevel=info']
         return subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except Exception as e:
         print(f"❌ Celery Worker启动失败: {str(e)}")

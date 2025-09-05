@@ -24,13 +24,6 @@ def test_celery_config():
         print(f"   CELERY_BROKER_URL: {Config.CELERY_BROKER_URL}")
         print(f"   CELERY_RESULT_BACKEND: {Config.CELERY_RESULT_BACKEND}")
         
-        # 测试创建Celery实例（无Flask应用）
-        from app.celery_app import make_celery
-        celery = make_celery()
-        print("✅ Celery实例创建成功（无Flask应用）")
-        print(f"   Broker: {celery.conf.broker_url}")
-        print(f"   Backend: {celery.conf.result_backend}")
-        
         # 测试创建Flask应用和Celery实例
         import sys
         import os
@@ -40,29 +33,30 @@ def test_celery_config():
             sys.path.insert(0, project_root)
         
         from app import create_app
-        app, socketio = create_app()
-        celery_with_app = make_celery(app)
+        from app.ext import celery
+        app = create_app()
+        celery_with_app = celery
         print("✅ Celery实例创建成功（有Flask应用）")
         print(f"   Broker: {celery_with_app.conf.broker_url}")
         print(f"   Backend: {celery_with_app.conf.result_backend}")
         
         # 验证配置是否一致
-        if celery.conf.broker_url == celery_with_app.conf.broker_url:
+        if celery_with_app.conf.broker_url == Config.CELERY_BROKER_URL:
             print("✅ Broker配置一致")
         else:
             print("❌ Broker配置不一致")
-            print(f"   无应用: {celery.conf.broker_url}")
-            print(f"   有应用: {celery_with_app.conf.broker_url}")
+            print(f"   配置: {Config.CELERY_BROKER_URL}")
+            print(f"   应用: {celery_with_app.conf.broker_url}")
         
-        if celery.conf.result_backend == celery_with_app.conf.result_backend:
+        if celery_with_app.conf.result_backend == Config.CELERY_RESULT_BACKEND:
             print("✅ Backend配置一致")
         else:
             print("❌ Backend配置不一致")
-            print(f"   无应用: {celery.conf.result_backend}")
-            print(f"   有应用: {celery_with_app.conf.result_backend}")
+            print(f"   配置: {Config.CELERY_RESULT_BACKEND}")
+            print(f"   应用: {celery_with_app.conf.result_backend}")
         
         # 测试任务注册
-        from app.tasks import process_question_async, get_suggestions_async
+        from app.schedules.chat_tasks import process_question_async, get_suggestions_async
         print("✅ 任务导入成功")
         print(f"   已注册任务: {list(celery.tasks.keys())}")
         

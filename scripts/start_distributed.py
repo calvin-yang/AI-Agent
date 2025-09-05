@@ -79,7 +79,7 @@ def start_flower():
     """启动Flower监控"""
     print("🔄 启动Flower监控...")
     try:
-        cmd = [sys.executable, '-m', 'celery', '-A', 'app.celery_app', 'flower', '--port=5555']
+        cmd = [sys.executable, '-m', 'celery', '-A', 'app.ext', 'flower', '--port=5555']
         return subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except Exception as e:
         print(f"❌ Flower启动失败: {str(e)}")

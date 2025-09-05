@@ -146,7 +146,7 @@ services:
       - redis
     volumes:
       - .:/app
-    command: celery -A app.celery_app flower --port=5555
+    command: celery -A app.ext flower --port=5555
     networks:
       - ai_agent_network
 
