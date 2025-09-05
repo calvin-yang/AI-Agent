@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+
+{% block title %}AI Agent - 智能助手{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column h-100">
+    <!-- 头部 -->
+    <div class="p-3 border-bottom">
+        <h4 class="mb-0 text-center">
+            <i class="fas fa-robot text-primary me-2"></i>
+            AI Agent 智能助手
+        </h4>
+        <p class="text-muted text-center mb-0">支持联网搜索的智能问答系统</p>
+    </div>
+    
+    <!-- 聊天区域 -->
+    <div class="flex-grow-1 p-3 overflow-auto" id="chatArea" style="height: 400px;">
+        <div class="message ai-message">
+            <div class="message-content">
+                <i class="fas fa-robot me-2"></i>
+                <div class="markdown-content">
+                    # 您好！我是AI智能助手 🤖
+                    
+                    我可以帮您回答问题，并根据问题的需要自动进行联网搜索来获取最新信息。
+                    
+                    ## 功能特点
+                    
+                    - **智能判断**：自动判断是否需要联网搜索
+                    - **多引擎搜索**：支持DuckDuckGo和Google搜索
+                    - **内容分析**：自动爬取网页内容进行分析
+                    - **准确回答**：提供准确、及时的回答
+                    
+                    ## 使用提示
+                    
+                    您可以问我任何问题，比如：
+                    - 最新的新闻资讯
+                    - 技术问题解答
+                    - 实时数据查询
+                    - 历史知识问答
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 输入区域 -->
+    <div class="p-3 border-top">
+        <form id="chatForm">
+            <div class="input-group">
+                <input type="text" class="form-control" id="questionInput" 
+                       placeholder="请输入您的问题..." autocomplete="off" required>
+                <button class="btn btn-send" type="submit" id="sendBtn">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </form>
+        
+        <!-- 搜索建议 -->
+        <div id="suggestions" class="mt-2" style="display: none;">
+            <small class="text-muted">搜索建议：</small>
+            <div id="suggestionList"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatArea = document.getElementById('chatArea');
+    const questionInput = document.getElementById('questionInput');
+    const chatForm = document.getElementById('chatForm');
+    const sendBtn = document.getElementById('sendBtn');
+    const suggestions = document.getElementById('suggestions');
+    const suggestionList = document.getElementById('suggestionList');
+    
+    // 发送消息
+    chatForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const question = questionInput.value.trim();
+        if (question) {
+            sendMessage(question);
+            questionInput.value = '';
+            suggestions.style.display = 'none';
+        }
+    });
+    
+    // 输入框变化时获取建议
+    let suggestionTimeout;
+    questionInput.addEventListener('input', function() {
+        const question = this.value.trim();
+        if (question.length > 3) {
+            clearTimeout(suggestionTimeout);
+            suggestionTimeout = setTimeout(() => {
+                getSuggestions(question);
+            }, 500);
+        } else {
+            suggestions.style.display = 'none';
+        }
+    });
+    
+    function sendMessage(question) {
+        // 添加用户消息
+        addMessage(question, 'user');
+        
+        // 显示打字指示器
+        showTypingIndicator();
+        
+        // 禁用发送按钮
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        
+        // 发送请求
+        fetch('/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ question: question })
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideTypingIndicator();
+            
+            if (data.success) {
+                const result = data.data;
+                addMessage(result.answer, 'ai', result);
+            } else {
+                addMessage('抱歉，处理您的问题时出现了错误：' + data.error, 'ai');
+            }
+        })
+        .catch(error => {
+            hideTypingIndicator();
+            addMessage('网络错误，请稍后重试。', 'ai');
+            console.error('Error:', error);
+        })
+        .finally(() => {
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+        });
+    }
+    
+    function addMessage(content, type, metadata = null) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${type}-message`;
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'message-content';
+        
+        if (type === 'user') {
+            contentDiv.innerHTML = `<i class="fas fa-user me-2"></i>${escapeHtml(content)}`;
+        } else {
+            // 渲染Markdown内容
+            const renderedContent = renderMarkdown(content);
+            let html = `<i class="fas fa-robot me-2"></i><div class="markdown-content">${renderedContent}</div>`;
+            
+            // 添加搜索信息
+            if (metadata && metadata.search_performed) {
+                html += `<div class="search-info">
+                    <i class="fas fa-search me-1"></i>
+                    已进行联网搜索，关键词：${escapeHtml(metadata.search_keywords)}
+                </div>`;
+                
+                // 添加来源链接
+                if (metadata.sources && metadata.sources.length > 0) {
+                    html += '<div class="sources"><strong>参考来源：</strong>';
+                    metadata.sources.slice(0, 3).forEach(source => {
+                        if (source.url) {
+                            html += `<div class="source-item">
+                                <a href="${source.url}" target="_blank">${escapeHtml(source.title || source.url)}</a>
+                            </div>`;
+                        }
+                    });
+                    html += '</div>';
+                }
+            }
+            
+            contentDiv.innerHTML = html;
+            
+            // 高亮代码块
+            if (typeof Prism !== 'undefined') {
+                Prism.highlightAllUnder(contentDiv);
+            }
+        }
+        
+        messageDiv.appendChild(contentDiv);
+        chatArea.appendChild(messageDiv);
+        chatArea.scrollTop = chatArea.scrollHeight;
+    }
+    
+    function showTypingIndicator() {
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'message ai-message';
+        typingDiv.id = 'typingIndicator';
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'typing-indicator';
+        contentDiv.innerHTML = `
+            <i class="fas fa-robot me-2"></i>
+            <span class="typing-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </span>
+        `;
+        
+        typingDiv.appendChild(contentDiv);
+        chatArea.appendChild(typingDiv);
+        chatArea.scrollTop = chatArea.scrollHeight;
+    }
+    
+    function hideTypingIndicator() {
+        const typingIndicator = document.getElementById('typingIndicator');
+        if (typingIndicator) {
+            typingIndicator.remove();
+        }
+    }
+    
+    function getSuggestions(question) {
+        fetch('/suggestions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ question: question })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.suggestions.length > 0) {
+                showSuggestions(data.suggestions);
+            }
+        })
+        .catch(error => {
+            console.error('获取建议失败:', error);
+        });
+    }
+    
+    function showSuggestions(suggestions) {
+        suggestionList.innerHTML = '';
+        suggestions.forEach(suggestion => {
+            const suggestionDiv = document.createElement('div');
+            suggestionDiv.className = 'badge bg-light text-dark me-1 mb-1';
+            suggestionDiv.style.cursor = 'pointer';
+            suggestionDiv.textContent = suggestion;
+            suggestionDiv.addEventListener('click', function() {
+                questionInput.value = suggestion;
+                suggestions.style.display = 'none';
+                questionInput.focus();
+            });
+            suggestionList.appendChild(suggestionDiv);
+        });
+        suggestions.style.display = 'block';
+    }
+    
+    function renderMarkdown(text) {
+        if (typeof marked !== 'undefined') {
+            // 配置marked选项
+            marked.setOptions({
+                breaks: true,
+                gfm: true,
+                sanitize: false
+            });
+            return marked.parse(text);
+        } else {
+            // 如果marked库未加载，则简单转义HTML
+            return escapeHtml(text);
+        }
+    }
+    
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    // 聚焦输入框
+    questionInput.focus();
+});
+</script>
+{% endblock %}
