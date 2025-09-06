@@ -6,7 +6,7 @@ SocketIO事件处理器
 import uuid
 from flask_socketio import emit, join_room, leave_room
 from .hooks import hook_manager
-from app.schedules.chat_tasks import process_question_async, get_suggestions_async, task_status_callback
+from app.schedules.chat_tasks import process_question_async, get_suggestions_async
 
 
 def register_socketio_events(app):
@@ -117,59 +117,8 @@ def register_socketio_events(app):
     
     @app.socketio.on('ask_question')
     def handle_ask_question(data):
-        """处理用户问题"""
-        try:
-            question = data.get('question', '').strip()
-            session_id = data.get('session_id')
-            
-            # 输入验证
-            if not question:
-                emit('error', {'message': '问题不能为空'})
-                return
-            
-            if not session_id:
-                emit('error', {'message': '会话ID缺失'})
-                return
-            
-            # 执行问题提交前钩子
-            if not hook_manager.execute_before_question(session_id, question):
-                emit('error', {'message': '无权提交此问题'})
-                return
-            
-            # 发送初始状态
-            emit('task_started', {
-                'status': '开始处理您的问题...',
-                'progress': 0,
-                'question': question
-            })
-            
-            # 启动异步任务
-            task = process_question_async.delay(question, session_id)
-            
-            # 存储任务信息
-            storage_hook = hook_manager.get_hook('storage')
-            if storage_hook:
-                storage = storage_hook._get_storage()
-                storage.store_task(session_id, task.id, {
-                    'question': question,
-                    'status': 'started',
-                    'created_at': storage.get_current_timestamp()
-                })
-            
-            # 执行问题提交后钩子
-            hook_manager.execute_after_question(session_id, question, task.id)
-            
-            # 发送任务ID
-            emit('task_id', {'task_id': task.id})
-            
-            # 启动状态监控任务
-            task_status_callback.delay(task.id, session_id)
-            
-            print(f"✅ 问题处理任务已启动: {task.id}")
-            
-        except Exception as e:
-            print(f"❌ 问题处理失败: {str(e)}")
-            emit('error', {'message': f'启动任务失败: {str(e)}'})
+        """处理用户问题 - 已弃用，现在通过API处理"""
+        emit('error', {'message': '请使用新的API接口发送消息'})
     
     @app.socketio.on('get_suggestions')
     def handle_get_suggestions(data):
@@ -268,3 +217,39 @@ def register_socketio_events(app):
         except Exception as e:
             print(f"❌ 清除历史记录失败: {str(e)}")
             emit('error', {'message': f'清除历史记录失败: {str(e)}'})
+    
+    @app.socketio.on('join_session')
+    def handle_join_session(data):
+        """加入会话房间"""
+        try:
+            session_id = data.get('session_id')
+            if not session_id:
+                emit('error', {'message': '会话ID不能为空'})
+                return
+            
+            # 加入会话房间
+            join_room(session_id)
+            emit('joined_session', {'session_id': session_id})
+            print(f"✅ 客户端加入会话房间: {session_id}")
+            
+        except Exception as e:
+            print(f"❌ 加入会话房间失败: {str(e)}")
+            emit('error', {'message': f'加入会话房间失败: {str(e)}'})
+    
+    @app.socketio.on('leave_session')
+    def handle_leave_session(data):
+        """离开会话房间"""
+        try:
+            session_id = data.get('session_id')
+            if not session_id:
+                emit('error', {'message': '会话ID不能为空'})
+                return
+            
+            # 离开会话房间
+            leave_room(session_id)
+            emit('left_session', {'session_id': session_id})
+            print(f"✅ 客户端离开会话房间: {session_id}")
+            
+        except Exception as e:
+            print(f"❌ 离开会话房间失败: {str(e)}")
+            emit('error', {'message': f'离开会话房间失败: {str(e)}'})

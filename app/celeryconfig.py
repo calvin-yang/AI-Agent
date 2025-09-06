@@ -113,6 +113,18 @@ CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_TASK_ACKS_LATE = True
 CELERY_WORKER_DISABLE_RATE_LIMITS = False
 
+# 操作系统兼容性配置
+import platform
+if platform.system() == 'Darwin':  # macOS
+    # macOS兼容性配置 - 避免fork()问题
+    CELERY_WORKER_POOL = 'solo'  # 使用solo模式避免fork()问题
+    CELERY_WORKER_CONCURRENCY = 1  # solo模式下只能使用1个并发
+    print("🍎 检测到macOS，使用solo模式避免fork()问题")
+else:
+    # Linux/Windows使用默认配置
+    CELERY_WORKER_POOL = 'prefork'  # 默认使用prefork模式
+    CELERY_WORKER_CONCURRENCY = 4  # 默认4个并发
+
 # 序列化配置
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'

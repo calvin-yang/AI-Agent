@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Celery Worker启动脚本
-使用正确的配置启动Worker
+macOS专用的Celery Worker启动脚本
+解决macOS上的fork()线程安全问题
 """
 
 import os
@@ -10,10 +10,10 @@ from dotenv import load_dotenv
 
 def main():
     """主函数"""
-    print("🔄 启动Celery Worker...")
+    print("🍎 启动macOS兼容的Celery Worker...")
     
     # 加载环境变量
-    env_file = os.path.join(os.path.dirname(__file__), '.env')
+    env_file = os.path.join(os.path.dirname(__file__), '..', '.env')
     if os.path.exists(env_file):
         load_dotenv(env_file)
         print("✅ 已加载环境变量")
@@ -32,10 +32,6 @@ def main():
     print(f"   CELERY_RESULT_BACKEND: {os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')}")
     
     try:
-        # 创建Flask应用实例以确保ContextTask正常工作
-        from app import create_app
-        app = create_app()
-        
         # 导入并启动Celery Worker
         from app.ext import celery
         
@@ -57,25 +53,25 @@ def main():
         registered_tasks = list(celery.tasks.keys())
         schedule_tasks = [task for task in registered_tasks if 'schedules' in task]
         
-        print("🚀 Celery Worker已启动")
+        print("🚀 macOS兼容的Celery Worker已启动")
         print(f"   已注册任务数量: {len(registered_tasks)}")
         print(f"   Schedules任务: {len(schedule_tasks)}")
         if schedule_tasks:
             print("   任务列表:")
             for task in schedule_tasks:
                 print(f"     - {task}")
+        print("   使用solo模式避免macOS fork()问题")
         print("   等待任务...")
         print("   按 Ctrl+C 停止")
         print("=" * 50)
         
-        # 启动Worker - 自动检测操作系统
-        import platform
-        if platform.system() == 'Darwin':  # macOS
-            print("🍎 检测到macOS，使用solo模式避免fork()问题")
-            celery.worker_main(['worker', '--loglevel=info', '--pool=solo'])
-        else:
-            print("🐧 检测到Linux/Windows，使用默认prefork模式")
-            celery.worker_main(['worker', '--loglevel=info'])
+        # 启动Worker - 强制使用solo模式
+        celery.worker_main([
+            'worker', 
+            '--loglevel=info', 
+            '--pool=solo',  # 使用solo模式
+            '--concurrency=1'  # solo模式下只能使用1个并发
+        ])
         
     except KeyboardInterrupt:
         print("\n👋 Worker已停止")

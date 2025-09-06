@@ -17,11 +17,11 @@ def init_extensions(app):
     """初始化所有Flask扩展"""
     # 初始化Redis
     redis_store.init_app(app)
-    
+
     # 初始化MongoDB
     mongodb_host = app.config.get('MONGODB_HOST', 'mongodb://admin:123456@127.0.0.1:27017/ai_agent_db?authSource=admin')
     connect(host=mongodb_host)
-    
+
     # 初始化Celery
     celery.conf.update(
         broker=app.config['CELERY_BROKER_URL'],
@@ -32,23 +32,23 @@ def init_extensions(app):
         timezone=app.config['CELERY_TIMEZONE'],
         enable_utc=app.config['CELERY_ENABLE_UTC'],
     )
-    
+
     # 加载Celery配置
     celery.config_from_object('app.celeryconfig')
-    
+
     # 设置Celery任务上下文
     class ContextTask(celery.Task):
         """确保任务在Flask应用上下文中运行"""
         def __call__(self, *args, **kwargs):
             with app.app_context():
                 return self.run(*args, **kwargs)
-    
+
     celery.Task = ContextTask
-    
+
     # 初始化SocketIO
     # 自动选择最佳的async_mode
     async_mode = 'threading'  # 默认使用threading模式
-    
+
     # 尝试使用eventlet，如果失败则回退到threading
     try:
         import eventlet
@@ -59,9 +59,9 @@ def init_extensions(app):
             async_mode = 'gevent'
         except ImportError:
             async_mode = 'threading'
-    
+
     print(f"🔧 使用SocketIO async_mode: {async_mode}")
-    
+
     socketio.init_app(
         app,
         cors_allowed_origins="*",
@@ -69,7 +69,7 @@ def init_extensions(app):
         message_queue=app.config['SOCKETIO_MESSAGE_QUEUE'],
         channel=app.config['SOCKETIO_CHANNEL']
     )
-    
+
     # 将扩展实例添加到app对象中
     app.redis = redis_store
     app.celery = celery

@@ -3,24 +3,27 @@
 {% block title %}AI Agent - 智能助手{% endblock %}
 
 {% block content %}
-<div class="d-flex flex-column h-100">
-    <!-- 头部 -->
-    <div class="p-3 border-bottom">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h4 class="mb-0">
-                <i class="fas fa-robot text-primary me-2"></i>
-                AI Agent 智能助手
-            </h4>
-            <div class="d-flex align-items-center gap-2">
-                <span id="connectionStatus" class="badge bg-warning">
-                    <i class="fas fa-circle text-warning me-1"></i>连接中...
-                </span>
-                <div id="walletSection">
-                    <button id="connectWalletBtn" class="btn btn-outline-primary btn-sm">
-                        <i class="fas fa-wallet me-1"></i>连接钱包
-                    </button>
-                    <div id="walletInfo" class="d-none">
-                        <span class="badge bg-success me-2">
+<div class="d-flex h-100">
+    <!-- 左侧会话历史面板 -->
+    <div class="sidebar bg-light border-end" id="sidebar" style="width: 300px; min-width: 300px;">
+        <!-- 会话面板头部 -->
+        <div class="p-3 border-bottom">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="mb-0">
+                    <i class="fas fa-comments me-2"></i>
+                    会话历史
+                </h6>
+                <button class="btn btn-outline-primary btn-sm" id="newChatBtn">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            <div id="walletSection">
+                <button id="connectWalletBtn" class="btn btn-outline-primary btn-sm w-100">
+                    <i class="fas fa-wallet me-1"></i>连接钱包
+                </button>
+                <div id="walletInfo" class="d-none">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span class="badge bg-success">
                             <i class="fas fa-check-circle me-1"></i>
                             <span id="walletAddress"></span>
                         </span>
@@ -31,54 +34,103 @@
                 </div>
             </div>
         </div>
-        <p class="text-muted text-center mb-0">支持联网搜索的智能问答系统</p>
-    </div>
-    
-    <!-- 聊天区域 -->
-    <div class="flex-grow-1 p-3 overflow-auto" id="chatArea" style="height: 400px;">
-        <div class="message ai-message">
-            <div class="message-content">
-                <i class="fas fa-robot me-2"></i>
-                <div class="markdown-content">
-                    # 您好！我是AI智能助手 🤖
-                    
-                    我可以帮您回答问题，并根据问题的需要自动进行联网搜索来获取最新信息。
-                    
-                    ## 功能特点
-                    
-                    - **智能判断**：自动判断是否需要联网搜索
-                    - **多引擎搜索**：支持DuckDuckGo和Google搜索
-                    - **内容分析**：自动爬取网页内容进行分析
-                    - **准确回答**：提供准确、及时的回答
-                    
-                    ## 使用提示
-                    
-                    您可以问我任何问题，比如：
-                    - 最新的新闻资讯
-                    - 技术问题解答
-                    - 实时数据查询
-                    - 历史知识问答
+        
+        <!-- 会话列表 -->
+        <div class="flex-grow-1 overflow-auto" id="sessionList" style="height: calc(100vh - 200px);">
+            <div class="p-3">
+                <div id="sessionItems">
+                    <!-- 会话项目将在这里动态加载 -->
                 </div>
+            </div>
+        </div>
+        
+        <!-- 会话面板底部 -->
+        <div class="p-3 border-top">
+            <div class="d-flex align-items-center justify-content-between">
+                <span id="connectionStatus" class="badge bg-warning">
+                    <i class="fas fa-circle text-warning me-1"></i>连接中...
+                </span>
+                <small class="text-muted">AI Agent v2.0</small>
             </div>
         </div>
     </div>
     
-    <!-- 输入区域 -->
-    <div class="p-3 border-top">
-        <form id="chatForm">
-            <div class="input-group">
-                <input type="text" class="form-control" id="questionInput" 
-                       placeholder="请输入您的问题..." autocomplete="off" required>
-                <button class="btn btn-send" type="submit" id="sendBtn">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
+    <!-- 右侧聊天区域 -->
+    <div class="flex-grow-1 d-flex flex-column">
+        <!-- 聊天头部 -->
+        <div class="p-3 border-bottom">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0" id="currentSessionTitle">
+                        <i class="fas fa-robot text-primary me-2"></i>
+                        AI Agent 智能助手
+                    </h5>
+                    <small class="text-muted">支持联网搜索的智能问答系统</small>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-secondary btn-sm" id="sessionSettingsBtn" style="display: none;">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" id="clearChatBtn" style="display: none;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
             </div>
-        </form>
+        </div>
         
-        <!-- 搜索建议 -->
-        <div id="suggestions" class="mt-2" style="display: none;">
-            <small class="text-muted">搜索建议：</small>
-            <div id="suggestionList"></div>
+        <!-- 聊天区域 -->
+        <div class="flex-grow-1 p-3 overflow-auto" id="chatArea" style="height: calc(100vh - 200px);">
+            <div class="message ai-message" id="welcomeMessage">
+                <div class="message-content">
+                    <i class="fas fa-robot me-2"></i>
+                    <div class="markdown-content">
+                        # 您好！我是AI智能助手 🤖
+                        
+                        我可以帮您回答问题，并根据问题的需要自动进行联网搜索来获取最新信息。
+                        
+                        ## 功能特点
+                        
+                        - **智能判断**：自动判断是否需要联网搜索
+                        - **多引擎搜索**：支持DuckDuckGo和Google搜索
+                        - **内容分析**：自动爬取网页内容进行分析
+                        - **准确回答**：提供准确、及时的回答
+                        - **会话管理**：支持多会话历史记录
+                        
+                        ## 使用提示
+                        
+                        您可以问我任何问题，比如：
+                        - 最新的新闻资讯
+                        - 技术问题解答
+                        - 实时数据查询
+                        - 历史知识问答
+                        
+                        ## 新功能
+                        
+                        - 点击左侧"+"按钮创建新会话
+                        - 左侧面板显示所有会话历史
+                        - 连接钱包后可永久保存会话记录
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 输入区域 -->
+        <div class="p-3 border-top">
+            <form id="chatForm">
+                <div class="input-group">
+                    <input type="text" class="form-control" id="questionInput" 
+                           placeholder="请输入您的问题..." autocomplete="off" required>
+                    <button class="btn btn-send" type="submit" id="sendBtn">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </form>
+            
+            <!-- 搜索建议 -->
+            <div id="suggestions" class="mt-2" style="display: none;">
+                <small class="text-muted">搜索建议：</small>
+                <div id="suggestionList"></div>
+            </div>
         </div>
     </div>
 </div>
@@ -160,6 +212,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const suggestions = document.getElementById('suggestions');
     const suggestionList = document.getElementById('suggestionList');
     
+    // 会话管理相关元素
+    const newChatBtn = document.getElementById('newChatBtn');
+    const sessionList = document.getElementById('sessionList');
+    const sessionItems = document.getElementById('sessionItems');
+    const currentSessionTitle = document.getElementById('currentSessionTitle');
+    const sessionSettingsBtn = document.getElementById('sessionSettingsBtn');
+    const clearChatBtn = document.getElementById('clearChatBtn');
+    
     // 钱包相关元素
     const connectWalletBtn = document.getElementById('connectWalletBtn');
     const walletInfo = document.getElementById('walletInfo');
@@ -177,13 +237,17 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentAccount = null;
     let authToken = localStorage.getItem('authToken');
     
+    // 会话状态
+    let currentSessionId = null;
+    let currentSession = null;
+    let sessions = [];
+    
     // 初始化SocketIO连接，只使用WebSocket
     const socket = io({
         transports: ['websocket'],
         upgrade: false,
         rememberUpgrade: false
     });
-    let sessionId = null;
     let currentTaskId = null;
     
     // SocketIO事件监听
@@ -199,9 +263,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     socket.on('connected', function(data) {
-        sessionId = data.session_id;
-        console.log('会话ID:', sessionId);
+        console.log('SocketIO连接成功');
         updateConnectionStatus('ready');
+        // 初始化会话管理
+        initializeSessionManagement();
     });
     
     socket.on('task_started', function(data) {
@@ -217,17 +282,37 @@ document.addEventListener('DOMContentLoaded', function() {
         addMessage('错误: ' + data.message, 'ai');
     });
     
+    socket.on('joined_session', function(data) {
+        console.log('已加入会话房间:', data.session_id);
+    });
+    
+    socket.on('left_session', function(data) {
+        console.log('已离开会话房间:', data.session_id);
+    });
+    
     // 发送消息
     chatForm.addEventListener('submit', function(e) {
         e.preventDefault();
         const question = questionInput.value.trim();
-        if (question && sessionId) {
+        if (question && currentSessionId) {
             sendMessageAsync(question);
             questionInput.value = '';
             const suggestionsContainer = document.getElementById('suggestions');
             suggestionsContainer.style.display = 'none';
-        } else if (!sessionId) {
-            addMessage('正在连接服务器，请稍候...', 'ai');
+        } else if (!currentSessionId) {
+            addMessage('请先创建或选择一个会话', 'ai');
+        }
+    });
+    
+    // 新会话按钮事件
+    newChatBtn.addEventListener('click', function() {
+        createNewSession();
+    });
+    
+    // 清空聊天按钮事件
+    clearChatBtn.addEventListener('click', function() {
+        if (currentSessionId) {
+            clearCurrentSession();
         }
     });
     
@@ -250,8 +335,21 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     function sendMessageAsync(question) {
-        // 添加用户消息
+        // 添加用户消息到界面
         addMessage(question, 'user');
+        
+        // 更新当前会话的消息列表（如果存在）
+        if (currentSession && currentSession.messages) {
+            const newMessage = {
+                message_type: 'user',
+                content: question,
+                metadata: null,
+                created_at: new Date().toISOString()
+            };
+            currentSession.messages.push(newMessage);
+            currentSession.message_count = currentSession.messages.length;
+            currentSession.last_message_at = new Date().toISOString();
+        }
         
         // 立即显示loading状态在聊天区域
         showTypingIndicator('正在分析您的问题...');
@@ -260,10 +358,37 @@ document.addEventListener('DOMContentLoaded', function() {
         sendBtn.disabled = true;
         sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         
-        // 通过SocketIO发送问题
-        socket.emit('ask_question', {
-            question: question,
-            session_id: sessionId
+        // 通过API发送问题（新方式）
+        fetch('/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': authToken ? `Bearer ${authToken}` : ''
+            },
+            body: JSON.stringify({
+                question: question,
+                session_id: currentSessionId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                currentTaskId = data.data.task_id;
+                // 任务已提交，等待SocketIO推送结果
+                console.log('任务已提交，等待结果推送:', currentTaskId);
+            } else {
+                hideTypingIndicator();
+                addMessage('发送失败: ' + data.error, 'ai');
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+            }
+        })
+        .catch(error => {
+            console.error('发送消息失败:', error);
+            hideTypingIndicator();
+            addMessage('发送失败: ' + error.message, 'ai');
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
         });
     }
     
@@ -276,13 +401,41 @@ document.addEventListener('DOMContentLoaded', function() {
             hideTypingIndicator();
             if (data.result) {
                 addMessage(data.result.answer, 'ai', data.result);
+                
+                // 更新当前会话的消息列表（如果存在）
+                if (currentSession && currentSession.messages) {
+                    const newMessage = {
+                        message_type: 'ai',
+                        content: data.result.answer,
+                        metadata: JSON.stringify(data.result),
+                        created_at: new Date().toISOString()
+                    };
+                    currentSession.messages.push(newMessage);
+                    currentSession.message_count = currentSession.messages.length;
+                    currentSession.last_message_at = new Date().toISOString();
+                }
             }
             sendBtn.disabled = false;
             sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
         } else if (data.state === 'FAILURE') {
             // 任务失败
             hideTypingIndicator();
-            addMessage('抱歉，处理您的问题时出现了错误：' + (data.error || '未知错误'), 'ai');
+            const errorMessage = '抱歉，处理您的问题时出现了错误：' + (data.error || '未知错误');
+            addMessage(errorMessage, 'ai');
+            
+            // 更新当前会话的消息列表（如果存在）
+            if (currentSession && currentSession.messages) {
+                const newMessage = {
+                    message_type: 'ai',
+                    content: errorMessage,
+                    metadata: JSON.stringify({ error: data.error }),
+                    created_at: new Date().toISOString()
+                };
+                currentSession.messages.push(newMessage);
+                currentSession.message_count = currentSession.messages.length;
+                currentSession.last_message_at = new Date().toISOString();
+            }
+            
             sendBtn.disabled = false;
             sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
         }
@@ -334,6 +487,13 @@ document.addEventListener('DOMContentLoaded', function() {
         messageDiv.appendChild(contentDiv);
         chatArea.appendChild(messageDiv);
         chatArea.scrollTop = chatArea.scrollHeight;
+        
+        // 如果是新消息（不是加载历史消息），更新当前会话的消息列表
+        if (currentSession && type === 'user') {
+            // 用户消息会在API调用时保存，这里不需要额外处理
+        } else if (currentSession && type === 'ai') {
+            // AI消息会在任务完成时保存，这里不需要额外处理
+        }
     }
     
     function showTypingIndicator(status = '正在思考...') {
@@ -797,6 +957,349 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 3000);
     }
+    
+    // ==================== 会话管理函数 ====================
+    
+    // 初始化会话管理
+    function initializeSessionManagement() {
+        loadSessions().then(() => {
+            // 如果有历史会话，加载最新的会话；否则创建新会话
+            if (sessions.length > 0) {
+                // 找到最新的会话（按last_message_at或created_at排序）
+                const latestSession = sessions.reduce((latest, current) => {
+                    const latestTime = new Date(latest.last_message_at || latest.created_at);
+                    const currentTime = new Date(current.last_message_at || current.created_at);
+                    return currentTime > latestTime ? current : latest;
+                });
+                switchToSession(latestSession.session_id);
+                console.log('加载最新会话:', latestSession.title);
+            } else {
+                // 没有历史会话，创建新会话
+                createNewSession();
+                console.log('创建新会话');
+            }
+        });
+    }
+    
+    // 加载会话列表
+    function loadSessions() {
+        return fetch('/api/sessions', {
+            headers: {
+                'Authorization': authToken ? `Bearer ${authToken}` : ''
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                sessions = data.data.sessions;
+                renderSessionList();
+                return sessions;
+            } else {
+                console.error('加载会话列表失败:', data.error);
+                return [];
+            }
+        })
+        .catch(error => {
+            console.error('加载会话列表失败:', error);
+            return [];
+        });
+    }
+    
+    // 加载会话详细信息
+    function loadSessionDetails(sessionId) {
+        return fetch(`/api/sessions/${sessionId}`, {
+            headers: {
+                'Authorization': authToken ? `Bearer ${authToken}` : ''
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                currentSession = data.data;
+                // 如果会话不在本地列表中，添加到列表中
+                if (!sessions.find(s => s.session_id === sessionId)) {
+                    sessions.unshift(currentSession);
+                }
+                return currentSession;
+            } else {
+                console.error('加载会话详情失败:', data.error);
+                return null;
+            }
+        })
+        .catch(error => {
+            console.error('加载会话详情失败:', error);
+            return null;
+        });
+    }
+    
+    // 渲染会话列表
+    function renderSessionList() {
+        sessionItems.innerHTML = '';
+        
+        if (sessions.length === 0) {
+            sessionItems.innerHTML = '<div class="text-muted text-center py-3">暂无会话记录</div>';
+            return;
+        }
+        
+        sessions.forEach(session => {
+            const sessionItem = createSessionItem(session);
+            sessionItems.appendChild(sessionItem);
+        });
+    }
+    
+    // 创建会话项目
+    function createSessionItem(session) {
+        const item = document.createElement('div');
+        item.className = `session-item p-2 mb-2 rounded cursor-pointer ${session.session_id === currentSessionId ? 'bg-primary text-white' : 'bg-white border'}`;
+        item.dataset.sessionId = session.session_id;
+        
+        const title = session.title || '新对话';
+        const lastMessage = session.last_message_at ? new Date(session.last_message_at).toLocaleDateString() : '';
+        
+        item.innerHTML = `
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="flex-grow-1">
+                    <div class="fw-bold text-truncate" style="max-width: 200px;" title="${title}">${title}</div>
+                    <small class="text-muted">${lastMessage}</small>
+                </div>
+                <div class="session-actions">
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteSession('${session.session_id}', event)" title="删除会话">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        item.addEventListener('click', function(e) {
+            if (!e.target.closest('.session-actions')) {
+                switchToSession(session.session_id);
+            }
+        });
+        
+        return item;
+    }
+    
+    // 创建新会话
+    function createNewSession() {
+        fetch('/api/sessions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': authToken ? `Bearer ${authToken}` : ''
+            },
+            body: JSON.stringify({
+                title: '新对话'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const newSession = data.data;
+                sessions.unshift(newSession);
+                switchToSession(newSession.session_id);
+                renderSessionList();
+            }
+        })
+        .catch(error => {
+            console.error('创建会话失败:', error);
+            // 如果API失败，创建临时会话
+            const tempSessionId = 'temp_' + Date.now();
+            switchToSession(tempSessionId);
+        });
+    }
+    
+    // 切换到指定会话
+    function switchToSession(sessionId) {
+        // 离开之前的会话房间
+        if (currentSessionId) {
+            socket.emit('leave_session', { session_id: currentSessionId });
+        }
+        
+        currentSessionId = sessionId;
+        currentSession = sessions.find(s => s.session_id === sessionId);
+        
+        // 如果会话不在本地列表中，从服务器获取完整信息
+        if (!currentSession) {
+            loadSessionDetails(sessionId).then(() => {
+                // 加入新的会话房间
+                socket.emit('join_session', { session_id: sessionId });
+                
+                // 更新UI
+                updateSessionUI();
+                
+                // 加载会话消息
+                loadSessionMessages(sessionId);
+                
+                // 重新渲染会话列表（更新选中状态）
+                renderSessionList();
+            });
+        } else {
+            // 加入新的会话房间
+            socket.emit('join_session', { session_id: sessionId });
+            
+            // 更新UI
+            updateSessionUI();
+            
+            // 加载会话消息
+            loadSessionMessages(sessionId);
+            
+            // 重新渲染会话列表（更新选中状态）
+            renderSessionList();
+        }
+    }
+    
+    // 更新会话UI
+    function updateSessionUI() {
+        if (currentSession) {
+            currentSessionTitle.innerHTML = `
+                <i class="fas fa-robot text-primary me-2"></i>
+                ${currentSession.title || 'AI Agent 智能助手'}
+            `;
+            sessionSettingsBtn.style.display = 'inline-block';
+            clearChatBtn.style.display = 'inline-block';
+        } else {
+            currentSessionTitle.innerHTML = `
+                <i class="fas fa-robot text-primary me-2"></i>
+                AI Agent 智能助手
+            `;
+            sessionSettingsBtn.style.display = 'none';
+            clearChatBtn.style.display = 'none';
+        }
+    }
+    
+    // 加载会话消息
+    function loadSessionMessages(sessionId) {
+        // 清空当前聊天区域
+        clearChatArea();
+        
+        // 如果是临时会话或没有消息，显示欢迎消息
+        if (!currentSession || !currentSession.messages || currentSession.messages.length === 0) {
+            showWelcomeMessage();
+            return;
+        }
+        
+        console.log(`加载会话 ${sessionId} 的消息，共 ${currentSession.messages.length} 条`);
+        
+        // 加载历史消息
+        currentSession.messages.forEach((message, index) => {
+            try {
+                let metadata = null;
+                if (message.metadata) {
+                    try {
+                        metadata = JSON.parse(message.metadata);
+                    } catch (e) {
+                        console.warn('解析消息元数据失败:', e);
+                    }
+                }
+                addMessage(message.content, message.message_type, metadata);
+            } catch (error) {
+                console.error(`加载第 ${index + 1} 条消息失败:`, error);
+            }
+        });
+        
+        // 滚动到底部
+        chatArea.scrollTop = chatArea.scrollHeight;
+    }
+    
+    // 清空聊天区域
+    function clearChatArea() {
+        const welcomeMessage = document.getElementById('welcomeMessage');
+        if (welcomeMessage) {
+            welcomeMessage.remove();
+        }
+        
+        const messages = chatArea.querySelectorAll('.message');
+        messages.forEach(msg => msg.remove());
+    }
+    
+    // 显示欢迎消息
+    function showWelcomeMessage() {
+        const welcomeDiv = document.createElement('div');
+        welcomeDiv.className = 'message ai-message';
+        welcomeDiv.id = 'welcomeMessage';
+        welcomeDiv.innerHTML = `
+            <div class="message-content">
+                <i class="fas fa-robot me-2"></i>
+                <div class="markdown-content">
+                    # 您好！我是AI智能助手 🤖
+                    
+                    我可以帮您回答问题，并根据问题的需要自动进行联网搜索来获取最新信息。
+                    
+                    ## 功能特点
+                    
+                    - **智能判断**：自动判断是否需要联网搜索
+                    - **多引擎搜索**：支持DuckDuckGo和Google搜索
+                    - **内容分析**：自动爬取网页内容进行分析
+                    - **准确回答**：提供准确、及时的回答
+                    - **会话管理**：支持多会话历史记录
+                    
+                    ## 使用提示
+                    
+                    您可以问我任何问题，比如：
+                    - 最新的新闻资讯
+                    - 技术问题解答
+                    - 实时数据查询
+                    - 历史知识问答
+                </div>
+            </div>
+        `;
+        chatArea.appendChild(welcomeDiv);
+    }
+    
+    // 清空当前会话
+    function clearCurrentSession() {
+        if (confirm('确定要清空当前会话的所有消息吗？')) {
+            clearChatArea();
+            showWelcomeMessage();
+            
+            // 如果用户已登录，调用API清空会话
+            if (authToken && currentSession) {
+                // 这里可以添加清空会话的API调用
+                console.log('清空会话:', currentSessionId);
+            }
+        }
+    }
+    
+    // 删除会话
+    function deleteSession(sessionId, event) {
+        event.stopPropagation();
+        
+        if (confirm('确定要删除这个会话吗？此操作不可恢复。')) {
+            if (authToken) {
+                fetch(`/api/sessions/${sessionId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // 从列表中移除
+                        sessions = sessions.filter(s => s.session_id !== sessionId);
+                        renderSessionList();
+                        
+                        // 如果删除的是当前会话，创建新会话
+                        if (currentSessionId === sessionId) {
+                            createNewSession();
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('删除会话失败:', error);
+                });
+            } else {
+                // 未登录用户，直接从列表中移除
+                sessions = sessions.filter(s => s.session_id !== sessionId);
+                renderSessionList();
+                
+                if (currentSessionId === sessionId) {
+                    createNewSession();
+                }
+            }
+        }
+    }
+    
     
     // 聚焦输入框
     questionInput.focus();
